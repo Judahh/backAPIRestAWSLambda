@@ -23,11 +23,14 @@ echo "setted Port: ${port}"
 
 case $exec in
   "dev")
-    node_modules/next/dist/bin/next -p $port;;
+    (cd $pwd ; ./node_modules/nodemon/bin/nodemon.js -e ts --exec "npm run build && npm run start")
+    ;;
 
   "build")
-    node_modules/next/dist/bin/next build;;
+    (cd $pwd ; backBuild ; npm run --prefix $pwd tsc)
+    ;;
 
   "")
-    node_modules/next/dist/bin/next start;;
+    sam local start-api
+    ;;
 esac
