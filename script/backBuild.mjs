@@ -32,9 +32,9 @@ const initTemplate = async () => {
   await writefil(
     './template.yaml',
     `AWSTemplateFormatVersion: '2010-09-09'\n` +
-    `Transform: AWS::Serverless-2016-10-31\n` +
-    `Description: >\n` +
-    `  SAM Template for aws-lambda\n\n`
+      `Transform: AWS::Serverless-2016-10-31\n` +
+      `Description: >\n` +
+      `  SAM Template for aws-lambda\n\n`
   );
 };
 
@@ -69,11 +69,25 @@ const addMethodToTemplate = async (functionName, type, path) => {
   console.log('new:', functionName, type, path);
   appendTemplate(
     `        ${functionName + type}:\n` +
-    `          Type: Api \n` +
-    `          Properties:\n` +
-    `            Path: ${path}\n` +
-    `            Method: ${method}\n`
+      `          Type: Api \n` +
+      `          Properties:\n` +
+      `            Path: ${path}\n` +
+      `            Method: ${method}\n`
   );
+};
+
+const clearEmpty = (element) => {
+  console.log('CLEAR', element);
+  const trimmed = element.trim();
+  const notEmpty =
+    trimmed !== '.' &&
+    trimmed !== ',' &&
+    trimmed !== 'map' &&
+    trimmed !== '(0' &&
+    trimmed !== '\n';
+  console.log('CLEAR2', trimmed, notEmpty);
+  if (notEmpty) return trimmed;
+  return false;
 };
 
 const addMethodsToTemplate = async (functionName, path) => {
@@ -85,35 +99,35 @@ const addMethodsToTemplate = async (functionName, path) => {
       try {
         const files = await readdir(path);
         for (const file of files) {
-          console.log('check:', file, functionName);
-          if (file.toLowerCase().includes(functionName.toLowerCase())) {
-            console.log('found:', file, functionName);
-            const content = (
-              await readfil(file, {
-                encoding: 'utf8',
-              })
-            )
-              .split('extends')[1]
-              .split(/(BaseController)|(,)/)
-              .filter(
-                (value) =>
-                  value.trim() !== null &&
-                  value.trim() !== '' &&
-                  value.trim() !== undefined
-              );
+          // console.log('check:', file, functionName);
+          if (
+            file.toLowerCase().includes(functionName.toLowerCase()) &&
+            !file.toLowerCase().includes('d.ts') &&
+            !file.toLowerCase().includes('.map')
+          ) {
+            // console.log('found:', file, functionName);
+            let content = await readfil(path + '/' + file, {
+              encoding: 'utf8',
+            });
+            // console.log('found:', content);
+            content = content.split('extends')[1];
+            // console.log('found:', content);
+            content = content.split(/(BaseController)|(,)|(\.)|(\n)/);
 
-            console.log('content: ' + content);
+            console.log('found2:', content, content.filter);
+
+            content = Array.isArray(content)
+              ? content.filter(clearEmpty)
+              : content;
 
             for (const type of content) {
+              console.log('found4: ', type);
               addMethodToTemplate(functionName, type, path);
             }
             addMethodToTemplate(functionName, 'option', path);
           }
         }
-      } catch (error) {
-
-      }
-
+      } catch (error) {}
     }
   }
 };
@@ -125,11 +139,11 @@ const addGlobalsToTemplate = async () => {
     tracingEnabled.charAt(0).toUpperCase() + tracingEnabled.slice(1);
   await appendTemplate(
     'Globals:\n' +
-    '  Function:\n' +
-    `    Timeout: ${process.env.AWS_FUNCTION_TIMEOUT || 3}\n` +
-    `    Tracing: ${process.env.AWS_FUNCTION_TRACING || 'Active'}\n` +
-    '  Api:\n' +
-    `    TracingEnabled: ${tracingEnabled}\n\n`
+      '  Function:\n' +
+      `    Timeout: ${process.env.AWS_FUNCTION_TIMEOUT || 3}\n` +
+      `    Tracing: ${process.env.AWS_FUNCTION_TRACING || 'Active'}\n` +
+      '  Api:\n' +
+      `    TracingEnabled: ${tracingEnabled}\n\n`
   );
 };
 
@@ -137,13 +151,13 @@ const addMetadataToTemplate = async (entryPoints) => {
   const tsconfig = await loadTsConfig();
   await appendTemplate(
     '    Metadata:\n' +
-    '      BuildMethod: esbuild\n' +
-    '      BuildProperties: esbuild\n' +
-    `        Minify: ${process.env.AWS_FUNCTION_MINIFY || 'true'}\n` +
-    `        Target: ${tsconfig.compilerOptions.target}\n` +
-    `        Sourcemap: ${tsconfig.compilerOptions.sourceMap}\n` +
-    `        EntryPoints:\n` +
-    entryPoints?.map((entryPoint) => `        - ${entryPoint}\n`)?.join()
+      '      BuildMethod: esbuild\n' +
+      '      BuildProperties: esbuild\n' +
+      `        Minify: ${process.env.AWS_FUNCTION_MINIFY || 'true'}\n` +
+      `        Target: ${tsconfig.compilerOptions.target}\n` +
+      `        Sourcemap: ${tsconfig.compilerOptions.sourceMap}\n` +
+      `        EntryPoints:\n` +
+      entryPoints?.map((entryPoint) => `        - ${entryPoint}\n`)?.join()
   );
 };
 
@@ -186,16 +200,16 @@ const addFunction = async (functionName, file, route, path, found) => {
   if (!found)
     await appendTemplate(
       `  ${functionName}Function:\n` +
-      '    Type: AWS::Serverless::Function\n' +
-      '    Properties:\n' +
-      `      CodeUri: ${path}\n` +
-      `      Handler: index\n` +
-      `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
-      `      Architectures:\n` +
-      architectures
-        ?.map((architecture) => `        - ${architecture}\n`)
-        ?.join() +
-      `      Events:\n`
+        '    Type: AWS::Serverless::Function\n' +
+        '    Properties:\n' +
+        `      CodeUri: ${path}\n` +
+        `      Handler: index\n` +
+        `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
+        `      Architectures:\n` +
+        architectures
+          ?.map((architecture) => `        - ${architecture}\n`)
+          ?.join() +
+        `      Events:\n`
     );
   await addMethodsToTemplate(functionName, path);
   await addMetadataToTemplate();
