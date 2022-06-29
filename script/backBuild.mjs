@@ -204,4 +204,4 @@ const execute = async () =>
     './dist/source/pages',
   ]);
 
-execute();
+await execute();
