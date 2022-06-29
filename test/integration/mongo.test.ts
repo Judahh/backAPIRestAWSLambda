@@ -4,8 +4,6 @@ import TestController from './testController';
 import { Test } from './test.class';
 import { mockResponse } from './response.mock';
 
-import { NextApiRequest as Request, NextApiResponse as Response } from 'next';
-
 let handler;
 let controller;
 describe('1', () => {
@@ -34,8 +32,8 @@ describe('1', () => {
     const store = await controller.create(
       {
         body: sentTest,
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
     // console.log('store:', store);
     const storedTest = store['received'];
@@ -51,8 +49,8 @@ describe('1', () => {
     const index = await controller.index(
       {
         params: { filter: {} },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
     // console.log('show:', show);
     const indexTest = index['received'];
@@ -61,8 +59,8 @@ describe('1', () => {
     const store2 = await controller.create(
       {
         body: sentTest2,
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
     // console.log('store:', store);
     const storedTest2 = store2['received'];
@@ -77,8 +75,8 @@ describe('1', () => {
     const show = await controller.show(
       {
         params: { filter: {} },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
 
     const showTest = show['received'];
@@ -102,8 +100,8 @@ describe('1', () => {
           filter: { id: storedTest2.id },
           single: false,
         },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
     // console.log('update:', update);
 
@@ -123,8 +121,8 @@ describe('1', () => {
     const show2 = await controller.show(
       {
         params: { filter: {} },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
 
     const showTest2 = show2['received'];
@@ -144,8 +142,8 @@ describe('1', () => {
         params: {
           filter: { id: storedTest2.id },
         },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
 
     const deletedTest = deleted['received'];
@@ -163,8 +161,8 @@ describe('1', () => {
     const show3 = await controller.show(
       {
         params: { filter: {} },
-      } as unknown as Request,
-      mockResponse as unknown as Response
+      } as any,
+      mockResponse as any
     );
 
     const showTest3 = show3['received'];
