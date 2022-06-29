@@ -29,8 +29,13 @@ const getParam = (file) => {
 };
 
 const initTemplate = async () => {
-  const base = await readfil('baseTemplate.yaml', { encoding: 'utf8' });
-  await writefil('./template.yaml', base);
+  await writefil(
+    './template.yaml',
+    `AWSTemplateFormatVersion: '2010-09-09'` +
+      `Transform: AWS::Serverless-2016-10-31` +
+      `Description: >` +
+      `  SAM Template for aws-lambda'`
+  );
 };
 
 const appendTemplate = async (text) => {
