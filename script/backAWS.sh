@@ -27,7 +27,7 @@ case $exec in
     ;;
 
   "build")
-    (cd $pwd ; backBuild ; npm run --prefix $pwd tsc)
+    (cd $pwd ; npm run --prefix $pwd tsc ; backBuild)
     ;;
 
   "")
