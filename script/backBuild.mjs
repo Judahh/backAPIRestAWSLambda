@@ -42,12 +42,63 @@ const loadTsConfig = async () => {
   return Hjson.parse(tsconfig);
 };
 
+const addMethodToTemplate = async (functionName, type, path) => {
+  let method;
+  switch (type.toLowerCase()) {
+    case 'create':
+      method = 'post';
+      break;
+    case 'read':
+      method = 'get';
+      break;
+    case 'update':
+      method = 'put';
+      break;
+    case 'delete':
+      method = 'delete';
+      break;
+    default:
+      method = type;
+      break;
+  }
+  appendTemplate(
+    `        ${functionName + type}:\n` +
+      `          Type: Api \n` +
+      `          Properties:\n` +
+      `            Path: ${path}\n` +
+      `            Method: ${method}\n`
+  );
+};
+
 const addMethodsToTemplate = async (functionName) => {
   const roots = ['./src', './source', './dist/src', './dist/source'];
   const subRoots = ['controller', 'controllers'];
   for (const root of roots) {
     for (const subRoot of subRoots) {
       const path = root + '/' + subRoot;
+      const files = await readdir(path);
+      for (const file of files) {
+        if (file.includes(functionName)) {
+          const content = (
+            await readfil('./tsconfig.json', {
+              encoding: 'utf8',
+            })
+          )
+            .split('extends')[1]
+            .split(/(BaseController)|(,)/)
+            .filter(
+              (value) =>
+                value.trim() !== null &&
+                value.trim() !== '' &&
+                value.trim() !== undefined
+            );
+
+          for (const type of content) {
+            addMethodToTemplate(functionName, type);
+          }
+          addMethodToTemplate(functionName, 'option');
+        }
+      }
     }
   }
 };
