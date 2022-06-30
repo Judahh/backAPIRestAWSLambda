@@ -12,6 +12,8 @@ import dotEnv from 'dotenv';
 
 dotEnv.config();
 
+const tsconfig = await loadTsConfig();
+
 const isFile = (file) => {
   return file.includes('.ts') || file.includes('.js');
 };
@@ -73,7 +75,7 @@ const addMethodToTemplate = async (functionName, type, path) => {
       break;
   }
   console.log('new:', functionName, type, path);
-  appendTemplate(
+  await appendTemplate(
     `        ${functionName + type}:\n` +
       `          Type: Api\n` +
       `          Properties:\n` +
@@ -82,20 +84,6 @@ const addMethodToTemplate = async (functionName, type, path) => {
   );
   if (type.toLowerCase() === 'update')
     await addMethodToTemplate(functionName, 'Update2', path);
-};
-
-const clearEmpty = (element) => {
-  console.log('CLEAR', element);
-  const trimmed = element.trim();
-  const notEmpty =
-    trimmed !== '.' &&
-    trimmed !== ',' &&
-    trimmed !== 'map' &&
-    trimmed !== '(0' &&
-    trimmed !== '\n';
-  console.log('CLEAR2', trimmed, notEmpty);
-  if (notEmpty) return trimmed;
-  return false;
 };
 
 const addMethodsToTemplate = async (functionName, functionPath) => {
@@ -132,9 +120,9 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
               console.log('content: ', content);
 
               for (const type of content) {
-                addMethodToTemplate(functionName, type, functionPath);
+                await addMethodToTemplate(functionName, type, functionPath);
               }
-              addMethodToTemplate(functionName, 'Option', functionPath);
+              await addMethodToTemplate(functionName, 'Option', functionPath);
             }
           }
         } catch (error) {}
@@ -156,7 +144,7 @@ const addGlobalsToTemplate = async () => {
       `    TracingEnabled: ${tracingEnabled}\n\n`
   );
 };
-const tsconfig = await loadTsConfig();
+
 const addMetadataToTemplate = async (entryPoints) => {
   if (entryPoints && entryPoints.length > 0)
     await appendTemplate(
@@ -191,15 +179,19 @@ const readFolder = async (path, roots) => {
       let found = false;
       entryPoints = [];
       for (const file of files) {
-        if (!isFile(file)) await readFolder(path + '/' + file, [root]);
-        else if (
-          isFile(file) &&
-          !file.toLowerCase().includes('handler') &&
-          !file.toLowerCase().includes('.ts') &&
-          !file.toLowerCase().includes('.map')
-        ) {
-          await readFile(path, file, found, realPath);
-          found = true;
+        try {
+          if (!isFile(file)) await readFolder(path + '/' + file, [root]);
+          else if (
+            isFile(file) &&
+            !file.toLowerCase().includes('handler') &&
+            !file.toLowerCase().includes('.ts') &&
+            !file.toLowerCase().includes('.map')
+          ) {
+            await readFile(path, file, found, realPath);
+            found = true;
+          }
+        } catch (error) {
+          console.log(error.message);
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
