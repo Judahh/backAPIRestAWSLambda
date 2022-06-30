@@ -239,6 +239,9 @@ const addFunction = async (
         `      Layers:\n` +
         `        - !Ref CommonLayer\n` +
         `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
+        `      Environment:\n` +
+        `        Variables:\n` +
+        `          NODE_PATH: './:/opt/node_modules'\n` +
         `      Architectures:\n` +
         architectures +
         `      Events:\n`
