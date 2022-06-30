@@ -234,7 +234,9 @@ const addFunction = async (
         '    Type: AWS::Serverless::Function\n' +
         '    Properties:\n' +
         `      CodeUri: ${realPath}\n` +
-        `      Handler: index\n` +
+        `      Handler: index.default\n` +
+        `      Layers:\n` +
+        `        - !Ref CommonLayer\n` +
         `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
         `      Architectures:\n` +
         architectures +
@@ -262,6 +264,19 @@ const execute = async () => {
     './dist/src/pages',
     './dist/source/pages',
   ]);
+  await appendTemplate(
+    '\n' +
+      `  CommonLayer:\n` +
+      `    Type: AWS::Serverless::LayerVersion\n` +
+      `    Properties:\n` +
+      `      LayerName: common-dependencies\n` +
+      `      Description: Common dependencies\n` +
+      `      ContentUri: ./\n` +
+      `      CompatibleRuntimes:\n` +
+      `        - nodejs12.x\n` +
+      `      LicenseInfo: 'MIT'\n` +
+      `      RetentionPolicy: Retain\n`
+  );
 };
 
 await execute();
