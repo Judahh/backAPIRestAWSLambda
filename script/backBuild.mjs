@@ -59,8 +59,14 @@ const addMethodToTemplate = async (functionName, type, path) => {
     case 'update':
       method = 'put';
       break;
+    case 'update2':
+      method = 'patch';
+      break;
     case 'delete':
       method = 'delete';
+      break;
+    case 'option':
+      method = 'option';
       break;
     default:
       method = type;
@@ -69,11 +75,13 @@ const addMethodToTemplate = async (functionName, type, path) => {
   console.log('new:', functionName, type, path);
   appendTemplate(
     `        ${functionName + type}:\n` +
-      `          Type: Api \n` +
+      `          Type: Api\n` +
       `          Properties:\n` +
       `            Path: ${path}\n` +
       `            Method: ${method}\n`
   );
+  if (type.toLowerCase() === 'update')
+    await addMethodToTemplate(functionName, 'Update2', path);
 };
 
 const clearEmpty = (element) => {
@@ -90,46 +98,48 @@ const clearEmpty = (element) => {
   return false;
 };
 
-const addMethodsToTemplate = async (functionName, path) => {
+const addMethodsToTemplate = async (functionName, functionPath) => {
   const roots = ['./src', './source', './dist/src', './dist/source'];
   const subRoots = ['controller', 'controllers'];
-  for (const root of roots) {
-    for (const subRoot of subRoots) {
-      const path = root + '/' + subRoot;
-      try {
-        const files = await readdir(path);
-        for (const file of files) {
-          // console.log('check:', file, functionName);
-          if (
-            file.toLowerCase().includes(functionName.toLowerCase()) &&
-            !file.toLowerCase().includes('d.ts') &&
-            !file.toLowerCase().includes('.map')
-          ) {
-            // console.log('found:', file, functionName);
-            let content = await readfil(path + '/' + file, {
-              encoding: 'utf8',
-            });
-            // console.log('found:', content);
-            content = content.split('extends')[1];
-            // console.log('found:', content);
-            content = content.split(/(BaseController)|(,)|(\.)|(\n)/);
+  if (functionName)
+    for (const root of roots) {
+      for (const subRoot of subRoots) {
+        const path = root + '/' + subRoot;
+        try {
+          const files = await readdir(path);
+          for (const file of files) {
+            // console.log('check:', file, functionName);
+            if (
+              file.toLowerCase().includes(functionName.toLowerCase()) &&
+              !file.toLowerCase().includes('.ts') &&
+              !file.toLowerCase().includes('.map')
+            ) {
+              console.log('found:', file, functionName);
+              let content = await readfil(path + '/' + file, {
+                encoding: 'utf8',
+              });
+              // console.log('found:', content);
+              content = content.split('extends')[1].split('exports')[0];
+              // console.log('content:', content);
+              content = content
+                .replaceAll(
+                  /(\(0)|(\))|(\()|(_\d)|(BaseController)|(backapirest\/)|(class)|(default)|(from)|(")|(')|(@)|(-)|(lambda)|(functions)|(function)|(azure)|(digital-ocean)|(oci)|(gcp)|(aws)|(aws)|(next)|(any)|(import)|(export)|(Mixin)|(\,)|(\.)|(\n)|(\{)|(\})|(\ )/gm,
+                  ','
+                )
+                .split(',')
+                .filter((n) => n);
 
-            console.log('found2:', content, content.filter);
+              console.log('content: ', content);
 
-            content = Array.isArray(content)
-              ? content.filter(clearEmpty)
-              : content;
-
-            for (const type of content) {
-              console.log('found4: ', type);
-              addMethodToTemplate(functionName, type, path);
+              for (const type of content) {
+                addMethodToTemplate(functionName, type, functionPath);
+              }
+              addMethodToTemplate(functionName, 'Option', functionPath);
             }
-            addMethodToTemplate(functionName, 'option', path);
           }
-        }
-      } catch (error) {}
+        } catch (error) {}
+      }
     }
-  }
 };
 
 const addGlobalsToTemplate = async () => {
@@ -146,19 +156,19 @@ const addGlobalsToTemplate = async () => {
       `    TracingEnabled: ${tracingEnabled}\n\n`
   );
 };
-
+const tsconfig = await loadTsConfig();
 const addMetadataToTemplate = async (entryPoints) => {
-  const tsconfig = await loadTsConfig();
-  await appendTemplate(
-    '    Metadata:\n' +
-      '      BuildMethod: esbuild\n' +
-      '      BuildProperties: esbuild\n' +
-      `        Minify: ${process.env.AWS_FUNCTION_MINIFY || 'true'}\n` +
-      `        Target: ${tsconfig.compilerOptions.target}\n` +
-      `        Sourcemap: ${tsconfig.compilerOptions.sourceMap}\n` +
-      `        EntryPoints:\n` +
-      entryPoints?.map((entryPoint) => `        - ${entryPoint}\n`)?.join()
-  );
+  if (entryPoints && entryPoints.length > 0)
+    await appendTemplate(
+      '    Metadata:\n' +
+        '      BuildMethod: esbuild\n' +
+        '      BuildProperties:\n' +
+        `        Minify: ${process.env.AWS_FUNCTION_MINIFY || 'true'}\n` +
+        `        Target: "${tsconfig.compilerOptions.target || 'es2020'}"\n` +
+        `        Sourcemap: ${tsconfig.compilerOptions.sourceMap || 'true'}\n` +
+        `        EntryPoints:\n` +
+        entryPoints?.map((entryPoint) => `        - ${entryPoint}\n`)?.join()
+    );
 };
 
 const readFolder = async (path, roots) => {
