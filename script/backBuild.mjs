@@ -12,6 +12,13 @@ import dotEnv from 'dotenv';
 
 dotEnv.config();
 
+let entryPoints = [];
+
+const loadTsConfig = async () => {
+  const tsconfig = await readfil('./tsconfig.json', { encoding: 'utf8' });
+  return Hjson.parse(tsconfig);
+};
+
 const tsconfig = await loadTsConfig();
 
 const isFile = (file) => {
@@ -42,11 +49,6 @@ const initTemplate = async () => {
 
 const appendTemplate = async (text) => {
   await appendfil('./template.yaml', text);
-};
-
-const loadTsConfig = async () => {
-  const tsconfig = await readfil('./tsconfig.json', { encoding: 'utf8' });
-  return Hjson.parse(tsconfig);
 };
 
 const addMethodToTemplate = async (functionName, type, path) => {
@@ -89,45 +91,49 @@ const addMethodToTemplate = async (functionName, type, path) => {
 const addMethodsToTemplate = async (functionName, functionPath) => {
   const roots = ['./src', './source', './dist/src', './dist/source'];
   const subRoots = ['controller', 'controllers'];
-  if (functionName)
-    for (const root of roots) {
-      for (const subRoot of subRoots) {
-        const path = root + '/' + subRoot;
-        try {
-          const files = await readdir(path);
-          for (const file of files) {
-            // console.log('check:', file, functionName);
-            if (
-              file.toLowerCase().includes(functionName.toLowerCase()) &&
-              !file.toLowerCase().includes('.ts') &&
-              !file.toLowerCase().includes('.map')
-            ) {
-              console.log('found:', file, functionName);
-              let content = await readfil(path + '/' + file, {
-                encoding: 'utf8',
-              });
-              // console.log('found:', content);
-              content = content.split('extends')[1].split('exports')[0];
-              // console.log('content:', content);
-              content = content
-                .replaceAll(
-                  /(\(0)|(\))|(\()|(_\d)|(BaseController)|(backapirest\/)|(class)|(default)|(from)|(")|(')|(@)|(-)|(lambda)|(functions)|(function)|(azure)|(digital-ocean)|(oci)|(gcp)|(aws)|(aws)|(next)|(any)|(import)|(export)|(Mixin)|(\,)|(\.)|(\n)|(\{)|(\})|(\ )/gm,
-                  ','
-                )
-                .split(',')
-                .filter((n) => n);
+  try {
+    if (functionName)
+      for (const root of roots) {
+        for (const subRoot of subRoots) {
+          const path = root + '/' + subRoot;
+          try {
+            const files = await readdir(path);
+            for (const file of files) {
+              // console.log('check:', file, functionName);
+              if (
+                file
+                  .toLowerCase()
+                  .includes(functionName.toLowerCase() + 'controller') &&
+                !file.toLowerCase().includes('.ts') &&
+                !file.toLowerCase().includes('.map')
+              ) {
+                console.log('found:', file, functionName);
+                let content = await readfil(path + '/' + file, {
+                  encoding: 'utf8',
+                });
+                // console.log('found:', content);
+                content = content.split('extends')[1].split('exports')[0];
+                // console.log('content:', content);
+                content = content
+                  .replaceAll(
+                    /(\(0)|(\))|(\()|(_\d)|(BaseController)|(backapirest\/)|(class)|(default)|(from)|(")|(')|(@)|(-)|(lambda)|(functions)|(function)|(azure)|(digital-ocean)|(oci)|(gcp)|(aws)|(aws)|(next)|(any)|(import)|(export)|(Mixin)|(\,)|(\.)|(\n)|(\{)|(\})|(\ )/gm,
+                    ','
+                  )
+                  .split(',')
+                  .filter((n) => n);
 
-              console.log('content: ', content);
+                console.log('content: ', content);
 
-              for (const type of content) {
-                await addMethodToTemplate(functionName, type, functionPath);
+                for (const type of content) {
+                  await addMethodToTemplate(functionName, type, functionPath);
+                }
+                await addMethodToTemplate(functionName, 'Option', functionPath);
               }
-              await addMethodToTemplate(functionName, 'Option', functionPath);
             }
-          }
-        } catch (error) {}
+          } catch (error) {}
+        }
       }
-    }
+  } catch (error) {}
 };
 
 const addGlobalsToTemplate = async () => {
@@ -146,7 +152,15 @@ const addGlobalsToTemplate = async () => {
 };
 
 const addMetadataToTemplate = async (entryPoints) => {
-  if (entryPoints && entryPoints.length > 0)
+  if (entryPoints && entryPoints.length > 0) {
+    const sEntryPoints = entryPoints
+      ?.map(
+        (entryPoint) =>
+          `        - ${
+            entryPoint.includes('[') ? "'" + entryPoint + "'" : entryPoint
+          }\n`
+      )
+      ?.join('');
     await appendTemplate(
       '    Metadata:\n' +
         '      BuildMethod: esbuild\n' +
@@ -155,23 +169,12 @@ const addMetadataToTemplate = async (entryPoints) => {
         `        Target: "${tsconfig.compilerOptions.target || 'es2020'}"\n` +
         `        Sourcemap: ${tsconfig.compilerOptions.sourceMap || 'true'}\n` +
         `        EntryPoints:\n` +
-        entryPoints
-          ?.map(
-            (entryPoint) =>
-              `        - ${
-                entryPoint.includes('[') ? "'" + entryPoint + "'" : entryPoint
-              }\n`
-          )
-          ?.join('')
+        sEntryPoints
     );
+  }
 };
 
-let entryPoints = [];
-
 const readFolder = async (path, roots) => {
-  await initTemplate();
-  await addGlobalsToTemplate();
-  await appendTemplate('Resources:\n');
   for (const root of roots) {
     const realPath = root !== undefined ? root + '/' + path : path;
     try {
@@ -225,6 +228,7 @@ const addFunction = async (
     ?.join('');
   entryPoints.push(file);
   if (!found) {
+    console.log('NEW FUNCTION: ' + functionName);
     await appendTemplate(
       `  ${functionName}Function:\n` +
         '    Type: AWS::Serverless::Function\n' +
@@ -242,7 +246,10 @@ const addFunction = async (
   }
 };
 
-const execute = async () =>
+const execute = async () => {
+  await initTemplate();
+  await addGlobalsToTemplate();
+  await appendTemplate('Resources:\n');
   await readFolder('api', [
     '.',
     './src',
@@ -255,5 +262,6 @@ const execute = async () =>
     './dist/src/pages',
     './dist/source/pages',
   ]);
+};
 
 await execute();
