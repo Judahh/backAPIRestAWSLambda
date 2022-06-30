@@ -192,8 +192,13 @@ const readFolder = async (path, roots) => {
       entryPoints = [];
       for (const file of files) {
         if (!isFile(file)) await readFolder(path + '/' + file, [root]);
-        else if (isFile(file)) {
-          await readFile(path, file, found);
+        else if (
+          isFile(file) &&
+          !file.toLowerCase().includes('handler') &&
+          !file.toLowerCase().includes('.ts') &&
+          !file.toLowerCase().includes('.map')
+        ) {
+          await readFile(path, file, found, realPath);
           found = true;
         }
       }
@@ -204,38 +209,39 @@ const readFolder = async (path, roots) => {
   }
 };
 
-const readFile = async (path, file, found) => {
-  if (
-    !file.toLowerCase().includes('.ts') &&
-    !file.toLowerCase().includes('.map')
-  ) {
-    const isIndex = isIndexFile(file);
-    const param = !isIndex && isParamFile(file) ? getParam(file) : undefined;
-    const route = '/' + path + (param !== undefined ? `:${param}` : '');
-    let functionName = path.split('/');
-    functionName = functionName[functionName.length - 1];
-    await addFunction(functionName, file, route, path, found);
-  }
+const readFile = async (path, file, found, realPath) => {
+  const isIndex = isIndexFile(file);
+  const param = !isIndex && isParamFile(file) ? getParam(file) : undefined;
+  const route = '/' + path + (param !== undefined ? `:${param}` : '');
+  let functionName = path.split('/');
+  functionName = functionName[functionName.length - 1];
+  await addFunction(functionName, file, route, path, found, realPath);
 };
 
-const addFunction = async (functionName, file, route, path, found) => {
+const addFunction = async (
+  functionName,
+  file,
+  route,
+  path,
+  found,
+  realPath
+) => {
   const architectures = JSON.parse(
     process.env.AWS_FUNCTION_ARCHITECTURES || '["x86_64"]'
-  );
+  )
+    ?.map((architecture) => `        - ${architecture}\n`)
+    ?.join('');
   entryPoints.push(file);
   if (!found) {
-    let sArchtectures = architectures
-      ?.map((architecture) => `        - ${architecture}\n`)
-      ?.join('');
     await appendTemplate(
       `  ${functionName}Function:\n` +
         '    Type: AWS::Serverless::Function\n' +
         '    Properties:\n' +
-        `      CodeUri: ${route}\n` +
+        `      CodeUri: ${realPath}\n` +
         `      Handler: index\n` +
         `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
         `      Architectures:\n` +
-        sArchtectures +
+        architectures +
         `      Events:\n`
     );
     await addMethodsToTemplate(functionName, path);
