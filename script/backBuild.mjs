@@ -145,6 +145,7 @@ const addGlobalsToTemplate = async () => {
     'Globals:\n' +
       '  Function:\n' +
       `    Timeout: ${process.env.AWS_FUNCTION_TIMEOUT || 3}\n` +
+      `    MemorySize: ${process.env.AWS_FUNCTION_MEMORY_SIZE || 512}\n` +
       `    Tracing: ${process.env.AWS_FUNCTION_TRACING || 'Active'}\n` +
       '  Api:\n' +
       `    TracingEnabled: ${tracingEnabled}\n\n`
