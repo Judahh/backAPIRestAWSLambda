@@ -31,6 +31,6 @@ case $exec in
     ;;
 
   "")
-    sam local start-api
+    sam local start-api -p $port
     ;;
 esac

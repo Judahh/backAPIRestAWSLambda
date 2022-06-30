@@ -77,7 +77,7 @@ const addMethodToTemplate = async (functionName, type, path) => {
     `        ${functionName + type}:\n` +
       `          Type: Api\n` +
       `          Properties:\n` +
-      `            Path: ${path}\n` +
+      `            Path: /${path}\n` +
       `            Method: ${method}\n`
   );
   if (type.toLowerCase() === 'update')
