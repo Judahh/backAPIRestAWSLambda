@@ -167,9 +167,18 @@ const addMetadataToTemplate = async (entryPoints) => {
         `        Target: "${tsconfig.compilerOptions.target || 'es2020'}"\n` +
         `        Sourcemap: ${tsconfig.compilerOptions.sourceMap || 'true'}\n` +
         `        EntryPoints:\n` +
-        entryPoints?.map((entryPoint) => `        - ${entryPoint}\n`)?.join()
+        entryPoints
+          ?.map(
+            (entryPoint) =>
+              `        - ${
+                entryPoint.includes('[') ? "'" + entryPoint + "'" : entryPoint
+              }\n`
+          )
+          ?.join('')
     );
 };
+
+let entryPoints = [];
 
 const readFolder = async (path, roots) => {
   await initTemplate();
@@ -180,6 +189,7 @@ const readFolder = async (path, roots) => {
     try {
       const files = await readdir(realPath);
       let found = false;
+      entryPoints = [];
       for (const file of files) {
         if (!isFile(file)) await readFolder(path + '/' + file, [root]);
         else if (isFile(file)) {
@@ -195,34 +205,43 @@ const readFolder = async (path, roots) => {
 };
 
 const readFile = async (path, file, found) => {
-  const isIndex = isIndexFile(file);
-  const param = !isIndex && isParamFile(file) ? getParam(file) : undefined;
-  const route = '/' + path + (param !== undefined ? `:${param}` : '');
-  let functionName = path.split('/');
-  functionName = functionName[functionName.length - 1];
-  await addFunction(functionName, file, route, path, found);
+  if (
+    !file.toLowerCase().includes('.ts') &&
+    !file.toLowerCase().includes('.map')
+  ) {
+    const isIndex = isIndexFile(file);
+    const param = !isIndex && isParamFile(file) ? getParam(file) : undefined;
+    const route = '/' + path + (param !== undefined ? `:${param}` : '');
+    let functionName = path.split('/');
+    functionName = functionName[functionName.length - 1];
+    await addFunction(functionName, file, route, path, found);
+  }
 };
 
 const addFunction = async (functionName, file, route, path, found) => {
   const architectures = JSON.parse(
     process.env.AWS_FUNCTION_ARCHITECTURES || '["x86_64"]'
   );
-  if (!found)
+  entryPoints.push(file);
+  if (!found) {
+    let sArchtectures = architectures
+      ?.map((architecture) => `        - ${architecture}\n`)
+      ?.join('');
     await appendTemplate(
       `  ${functionName}Function:\n` +
         '    Type: AWS::Serverless::Function\n' +
         '    Properties:\n' +
-        `      CodeUri: ${path}\n` +
+        `      CodeUri: ${route}\n` +
         `      Handler: index\n` +
         `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
         `      Architectures:\n` +
-        architectures
-          ?.map((architecture) => `        - ${architecture}\n`)
-          ?.join() +
+        sArchtectures +
         `      Events:\n`
     );
-  await addMethodsToTemplate(functionName, path);
-  await addMetadataToTemplate();
+    await addMethodsToTemplate(functionName, path);
+  } else {
+    await addMetadataToTemplate(entryPoints);
+  }
 };
 
 const execute = async () =>
