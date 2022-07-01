@@ -3,5 +3,5 @@ import { Mixin } from 'ts-mixer';
 import { AbstractControllerUpdate, IControllerUpdate } from 'backapi';
 
 export default class BaseControllerUpdate
-  extends Mixin(AbstractControllerUpdate, BaseControllerDefault)
+  extends Mixin(BaseControllerDefault, AbstractControllerUpdate)
   implements IControllerUpdate {}

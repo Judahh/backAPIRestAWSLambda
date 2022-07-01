@@ -3,5 +3,5 @@ import { Mixin } from 'ts-mixer';
 import { AbstractControllerTrace, IControllerTrace } from 'backapi';
 
 export default class BaseControllerTrace
-  extends Mixin(AbstractControllerTrace, BaseControllerDefault)
+  extends Mixin(BaseControllerDefault, AbstractControllerTrace)
   implements IControllerTrace {}

@@ -3,5 +3,5 @@ import { Mixin } from 'ts-mixer';
 import { AbstractControllerConnect, IControllerConnect } from 'backapi';
 
 export default class BaseControllerConnect
-  extends Mixin(AbstractControllerConnect, BaseControllerDefault)
+  extends Mixin(BaseControllerDefault, AbstractControllerConnect)
   implements IControllerConnect {}

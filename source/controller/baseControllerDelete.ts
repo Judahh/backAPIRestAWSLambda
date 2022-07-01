@@ -3,5 +3,5 @@ import { Mixin } from 'ts-mixer';
 import { AbstractControllerDelete, IControllerDelete } from 'backapi';
 
 export default class BaseControllerDelete
-  extends Mixin(AbstractControllerDelete, BaseControllerDefault)
+  extends Mixin(BaseControllerDefault, AbstractControllerDelete)
   implements IControllerDelete {}
