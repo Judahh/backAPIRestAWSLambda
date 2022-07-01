@@ -27,7 +27,11 @@ case $exec in
     ;;
 
   "build")
-    (cd $pwd ;  backBuild; npm run --prefix $pwd webpack ;)
+    (cd $pwd; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json)
+    ;;
+
+  "full-build")
+    (cd $pwd; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json; sam-build)
     ;;
 
   "")

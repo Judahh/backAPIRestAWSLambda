@@ -2,7 +2,6 @@
 import DBHandler, { read, write } from './dBHandler';
 import TestController from './testController';
 import { Test } from './test.class';
-import { mockResponse } from './response.mock';
 
 let handler;
 let controller;
@@ -33,14 +32,14 @@ describe('1', () => {
       {
         body: sentTest,
       } as any,
-      mockResponse as any
+      {}
     );
-    // console.log('store:', store);
-    const storedTest = store['received'];
+    console.log('store:', store);
+    const storedTest = store;
     // console.log('storedTest:', storedTest);
 
-    sentTest.id = storedTest.id;
-    const expectedTest = { id: storedTest.id };
+    sentTest.id = storedTest.body.id;
+    const expectedTest = { body: { id: storedTest.body.id } };
     console.log('expectedTest:', expectedTest);
     console.log('storedTest:', storedTest);
 
@@ -48,90 +47,106 @@ describe('1', () => {
 
     const index = await controller.index(
       {
-        params: { filter: {} },
+        query: { filter: {} },
       } as any,
-      mockResponse as any
+      {}
     );
     // console.log('show:', show);
-    const indexTest = index['received'];
+    const indexTest = index;
     expect(indexTest).toMatchObject(expectedTest);
 
     const store2 = await controller.create(
       {
         body: sentTest2,
       } as any,
-      mockResponse as any
+      {}
     );
     // console.log('store:', store);
-    const storedTest2 = store2['received'];
+    const storedTest2 = store2;
     // console.log('storedTest2:', storedTest);
 
-    sentTest2.id = storedTest2.id;
-    const expectedTest2 = { id: storedTest2.id };
+    sentTest2.id = storedTest2.body.id;
+    const expectedTest2 = { body: { id: storedTest2.body.id } };
     // console.log('expectedTest:', expectedTest);
 
     expect(storedTest2).toMatchObject(expectedTest2);
 
     const show = await controller.show(
       {
-        params: { filter: {} },
+        query: { filter: {} },
       } as any,
-      mockResponse as any
+      {}
     );
 
-    const showTest = show['received'];
+    const showTest = show;
 
-    const expectedTests = [storedTest, storedTest2];
+    const expectedTests = [storedTest.body, storedTest2.body];
 
     const cleanShowTest = JSON.parse(JSON.stringify(showTest));
     const cleanExpectedTests = JSON.parse(JSON.stringify(expectedTests));
-    console.log('showTest:', cleanShowTest);
-    console.log('expectedTests:', cleanExpectedTests);
-    expect(cleanShowTest).toEqual(cleanExpectedTests);
+    // console.log('showTest:', cleanShowTest);
+    // console.log('expectedTests:', cleanExpectedTests);
+    expect(cleanShowTest.body).toEqual(cleanExpectedTests);
 
-    const sentTest3 = { name: 'Test' };
+    const sentTest3 = { name: 'Test SENT 3' };
 
     // console.log('storedTest2:', storedTest2);
 
     const update = await controller.update(
       {
         body: sentTest3,
-        params: {
-          filter: { id: storedTest2.id },
+        query: {
+          filter: { id: storedTest2.body.id },
           single: false,
         },
       } as any,
-      mockResponse as any
+      {}
     );
+
+    // update = await controller.show(
+    //   {
+    //     query: {
+    //       filter: { id: storedTest2.body.id },
+    //     },
+    //   } as any,
+    //   {}
+    // );
     // console.log('update:', update);
 
-    const updatedTest = update['received'];
-    // console.log('updatedTest:', updatedTest);
-    const expectedUpdatedTest = { id: storedTest2.id, name: sentTest3.name };
+    const updatedTest = update;
+    console.log('sent:', sentTest3);
+    console.log('find:', { id: storedTest2.body.id });
+    console.log('updatedTest:', updatedTest);
+    const expectedUpdatedTest = {
+      id: storedTest2.body.id,
+      name: sentTest3.name,
+    };
     // console.log('expectedUpdatedTest:', expectedUpdatedTest);
 
-    const cleanUpdatedTest = JSON.parse(JSON.stringify(updatedTest));
+    const cleanUpdatedTest = JSON.parse(JSON.stringify(updatedTest.body));
     const cleanExpectedUpdatedTest = JSON.parse(
       JSON.stringify(expectedUpdatedTest)
     );
-    console.log('cleanUpdatedTest:', cleanUpdatedTest);
+    console.log('update cleanUpdatedTest:', cleanUpdatedTest);
     console.log('cleanExpectedUpdatedTest:', cleanExpectedUpdatedTest);
     expect(cleanUpdatedTest).toEqual(cleanExpectedUpdatedTest);
 
     const show2 = await controller.show(
       {
-        params: { filter: {} },
+        query: { filter: {} },
       } as any,
-      mockResponse as any
+      {}
     );
 
-    const showTest2 = show2['received'];
+    const showTest2 = show2;
 
-    const expectedTests2 = [storedTest, expectedUpdatedTest];
+    // console.log('SHOW ALL', showTest2);
+
+    const expectedTests2 = [storedTest.body, expectedUpdatedTest];
     // console.log('showTest2:', showTest2);
     // console.log('expectedTests2:', expectedTests2);
 
-    const cleanShowTest2 = JSON.parse(JSON.stringify(showTest2));
+    const cleanShowTest2 = JSON.parse(JSON.stringify(showTest2.body));
     const cleanExpectedTests2 = JSON.parse(JSON.stringify(expectedTests2));
     console.log('cleanShowTest2:', cleanShowTest2);
     console.log('cleanExpectedTests2:', cleanExpectedTests2);
@@ -139,18 +154,18 @@ describe('1', () => {
 
     const deleted = await controller.delete(
       {
-        params: {
-          filter: { id: storedTest2.id },
+        query: {
+          filter: { id: storedTest2.body.id },
         },
       } as any,
-      mockResponse as any
+      {}
     );
 
-    const deletedTest = deleted['received'];
-    // console.log('deletedTest:', deletedTest);
+    const deletedTest = deleted;
+    console.log('deletedTest id:', storedTest2.body.id);
     const expectedDeletedTest = expectedUpdatedTest;
     // console.log('expectedDeletedTest:', expectedDeletedTest);
-    const cleanDeletedTest = JSON.parse(JSON.stringify(deletedTest));
+    const cleanDeletedTest = JSON.parse(JSON.stringify(deletedTest.body));
     const cleanExpectedDeletedTest = JSON.parse(
       JSON.stringify(expectedDeletedTest)
     );
@@ -160,14 +175,14 @@ describe('1', () => {
 
     const show3 = await controller.show(
       {
-        params: { filter: {} },
+        query: { filter: {} },
       } as any,
-      mockResponse as any
+      {}
     );
 
-    const showTest3 = show3['received'];
+    const showTest3 = show3.body;
     // console.log('showTest3:', showTest3);
-    const expectedTests3 = [storedTest];
+    const expectedTests3 = [storedTest.body];
     const cleanShowTest3 = JSON.parse(JSON.stringify(showTest3));
     const cleanExpectedTests3 = JSON.parse(JSON.stringify(expectedTests3));
     console.log('cleanShowTest3:', cleanShowTest3);
