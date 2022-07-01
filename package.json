@@ -2,7 +2,7 @@
   "name": "@backapirest/aws-lambda",
   "productName": "backAPIRestAWSLambda",
   "author": "Judah Holanda Correia Lima <judahholanda7@gmail.com> (https://judahh.com)",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "private": false,
   "description": "A simple API framework using Flexible Persistence",
   "main": "dist/source/index.js",
@@ -57,7 +57,10 @@
     "journaly": "latest",
     "aws-lambda": "latest",
     "thread-promises": "latest",
-    "hjson": "latest"
+    "hjson": "latest",
+    "ts-loader": "latest",
+    "webpack": "latest",
+    "webpack-node-externals": "latest"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",

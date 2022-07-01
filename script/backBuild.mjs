@@ -13,6 +13,7 @@ import dotEnv from 'dotenv';
 dotEnv.config();
 
 let entryPoints = [];
+let allEntryPoints = [];
 
 const loadTsConfig = async () => {
   const tsconfig = await readfil('./tsconfig.json', { encoding: 'utf8' });
@@ -89,7 +90,7 @@ const addMethodToTemplate = async (functionName, type, path) => {
 };
 
 const addMethodsToTemplate = async (functionName, functionPath) => {
-  const roots = ['./src', './source', './dist/src', './dist/source'];
+  const roots = ['./src', './source'];
   const subRoots = ['controller', 'controllers'];
   try {
     if (functionName)
@@ -104,7 +105,7 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
                 file
                   .toLowerCase()
                   .includes(functionName.toLowerCase() + 'controller') &&
-                !file.toLowerCase().includes('.ts') &&
+                !file.toLowerCase().includes('.js') &&
                 !file.toLowerCase().includes('.map')
               ) {
                 console.log('found:', file, functionName);
@@ -145,19 +146,30 @@ const addGlobalsToTemplate = async () => {
     'Globals:\n' +
       '  Function:\n' +
       `    Timeout: ${process.env.AWS_FUNCTION_TIMEOUT || 3}\n` +
+      `    MemorySize: ${process.env.AWS_FUNCTION_MEMORY_SIZE || 512}\n` +
       `    Tracing: ${process.env.AWS_FUNCTION_TRACING || 'Active'}\n` +
       '  Api:\n' +
       `    TracingEnabled: ${tracingEnabled}\n\n`
   );
 };
 
-const addMetadataToTemplate = async (entryPoints) => {
+const addMetadataToTemplate = async (entryPoints, functionName, realPath) => {
   if (entryPoints && entryPoints.length > 0) {
-    const sEntryPoints = entryPoints
+    const newEntries = [];
+    for (let index = 0; index < entryPoints.length; index++) {
+      const entryPoint = entryPoints[index];
+      const name = `${functionName}${index}`;
+      newEntries.push(name + '.js');
+      allEntryPoints.push({
+        name: `${name}`,
+        value: `${realPath}/${entryPoint}.js`,
+      });
+    }
+    const sEntryPoints = newEntries
       ?.map(
-        (entryPoint) =>
+        (newEntry) =>
           `        - ${
-            entryPoint.includes('[') ? "'" + entryPoint + "'" : entryPoint
+            newEntry.includes('[') ? "'" + newEntry + "'" : newEntry
           }\n`
       )
       ?.join('');
@@ -187,7 +199,7 @@ const readFolder = async (path, roots) => {
           else if (
             isFile(file) &&
             !file.toLowerCase().includes('handler') &&
-            !file.toLowerCase().includes('.ts') &&
+            !file.toLowerCase().includes('.js') &&
             !file.toLowerCase().includes('.map')
           ) {
             await readFile(path, file, found, realPath);
@@ -233,19 +245,86 @@ const addFunction = async (
       `  ${functionName}Function:\n` +
         '    Type: AWS::Serverless::Function\n' +
         '    Properties:\n' +
-        `      CodeUri: ${realPath}\n` +
+        `      CodeUri: ./dist\n` +
         `      Handler: index.default\n` +
-        `      Layers:\n` +
-        `        - !Ref CommonLayer\n` +
-        `      Runtime: ${process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
-        `      Architectures:\n` +
-        architectures +
-        `      Events:\n`
+        JSON.parse(
+          process.env.AWS_FUNCTION_USE_COMMON_LAYER?.toLowerCase() || 'false'
+        )
+        ? `      Layers:\n` + `        - !Ref CommonLayer\n`
+        : '' +
+            `      Runtime: ${
+              process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'
+            }\n` +
+            `      Environment:\n` +
+            `        Variables:\n` +
+            `          NODE_PATH: './:/opt/node_modules'\n` +
+            `      Architectures:\n` +
+            architectures +
+            `      Events:\n`
     );
     await addMethodsToTemplate(functionName, path);
   } else {
-    await addMetadataToTemplate(entryPoints);
+    await addMetadataToTemplate(entryPoints, functionName, realPath);
   }
+};
+
+const initWebpackConfig = async () => {
+  await writefil(
+    './webpack.config.js',
+    `const path = require('path');\n` +
+      `const nodeExternals = require('webpack-node-externals');\n` +
+      `module.exports = {\n` +
+      `  mode: 'production',\n` +
+      `  target: 'node16',\n` +
+      `  devtool: 'inline-source-map',\n` +
+      `  resolve: {\n` +
+      `    modules: ['node_modules'],\n` +
+      `  },\n` +
+      `  module: {\n` +
+      `    rules: [\n` +
+      `      {\n` +
+      `        test: /\.tsx?$/,\n` +
+      `        use: 'ts-loader',\n` +
+      `      },\n` +
+      `    ],\n` +
+      `  },\n` +
+      `  resolve: {\n` +
+      `    extensions: ['.tsx', '.ts', '.js'],\n` +
+      `  },\n` +
+      `  externalsPresets: { node: true },\n` +
+      `  externals: [nodeExternals()],\n` +
+      `  output: {\n` +
+      `    path: path.resolve(__dirname, 'dist'),\n` +
+      `    filename: '[name].js',\n` +
+      `    library: {\n` +
+      `      type: 'commonjs',\n` +
+      `    },\n` +
+      `  },\n`
+  );
+};
+
+const closeWebpackConfig = async () => {
+  await appendWebpackConfig(`};\n`);
+};
+
+const addEntriesToWebpackConfig = async () => {
+  await appendWebpackConfig(
+    `  entry: {\n` +
+      allEntryPoints
+        .map((entry) => `    ${entry.name}: ${entry.value}`)
+        .join(',\n') +
+      `  },\n`
+  );
+};
+
+const appendWebpackConfig = async (text) => {
+  await appendfil('./webpack.config.js', text);
+  await addEntriesToWebpackConfig();
+  await closeWebpackConfig();
+};
+
+const generateWebpackConfig = async () => {
+  await initWebpackConfig();
 };
 
 const execute = async () => {
@@ -258,25 +337,26 @@ const execute = async () => {
     './source',
     './src/pages',
     './source/pages',
-    './dist',
-    './dist/src',
-    './dist/source',
-    './dist/src/pages',
-    './dist/source/pages',
   ]);
-  await appendTemplate(
-    '\n' +
-      `  CommonLayer:\n` +
-      `    Type: AWS::Serverless::LayerVersion\n` +
-      `    Properties:\n` +
-      `      LayerName: common-dependencies\n` +
-      `      Description: Common dependencies\n` +
-      `      ContentUri: ./\n` +
-      `      CompatibleRuntimes:\n` +
-      `        - nodejs12.x\n` +
-      `      LicenseInfo: 'MIT'\n` +
-      `      RetentionPolicy: Retain\n`
-  );
+  await generateWebpackConfig();
+  if (
+    JSON.parse(
+      process.env.AWS_FUNCTION_USE_COMMON_LAYER?.toLowerCase() || 'false'
+    )
+  )
+    await appendTemplate(
+      '\n' +
+        `  CommonLayer:\n` +
+        `    Type: AWS::Serverless::LayerVersion\n` +
+        `    Properties:\n` +
+        `      LayerName: common-dependencies\n` +
+        `      Description: Common dependencies\n` +
+        `      ContentUri: ./\n` +
+        `      CompatibleRuntimes:\n` +
+        `        - nodejs12.x\n` +
+        `      LicenseInfo: 'MIT'\n` +
+        `      RetentionPolicy: Retain\n`
+    );
 };
 
 await execute();
