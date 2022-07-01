@@ -14,6 +14,49 @@ dotEnv.config();
 
 let entryPoints = [];
 let allEntryPoints = [];
+let envVars = JSON.parse(JSON.stringify(process.env) || '{}');
+
+for (const key in envVars) {
+  if (Object.hasOwnProperty.call(envVars, key)) {
+    if (
+      key.includes('npm_package') ||
+      key.includes('npm_config') ||
+      key.includes('npm_lifecycle') ||
+      key.includes('npm_node') ||
+      key.includes('npm_execpath') ||
+      key === 'NODE_PATH' ||
+      key === 'LESSOPEN' ||
+      key === 'USER' ||
+      key === 'SHLVL' ||
+      key === 'MOTD_SHOWN' ||
+      key === 'HOME' ||
+      key === 'OLDPWD' ||
+      key === 'YARN_WRAP_OUTPUT' ||
+      key === 'WSL_DISTRO_NAME' ||
+      key === 'LOGNAME' ||
+      key === 'NAME' ||
+      key === '_' ||
+      key === 'TERM' ||
+      key === 'PATH' ||
+      key === 'NODE' ||
+      key === 'LANG' ||
+      key === 'LS_COLORS' ||
+      key === 'SHELL' ||
+      key === 'LESSCLOSE' ||
+      key === 'PWD' ||
+      key === 'XDG_DATA_DIRS' ||
+      key === 'HOSTTYPE' ||
+      key === 'INIT_CWD' ||
+      key === 'WSLENV'
+    ) {
+      delete envVars[key];
+    }
+  }
+}
+
+const useCommonLayer = envVars.AWS_FUNCTION_USE_COMMON_LAYER
+  ? envVars.AWS_FUNCTION_USE_COMMON_LAYER.toLowerCase()
+  : 'true';
 
 const loadTsConfig = async () => {
   const tsconfig = await readfil('./tsconfig.json', { encoding: 'utf8' });
@@ -138,16 +181,16 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
 };
 
 const addGlobalsToTemplate = async () => {
-  let tracingEnabled = process.env.AWS_API_TRACING_ENABLED || 'true';
+  let tracingEnabled = envVars.AWS_API_TRACING_ENABLED || 'true';
   tracingEnabled = tracingEnabled.toLowerCase();
   tracingEnabled =
     tracingEnabled.charAt(0).toUpperCase() + tracingEnabled.slice(1);
   await appendTemplate(
     'Globals:\n' +
       '  Function:\n' +
-      `    Timeout: ${process.env.AWS_FUNCTION_TIMEOUT || 3}\n` +
-      `    MemorySize: ${process.env.AWS_FUNCTION_MEMORY_SIZE || 512}\n` +
-      `    Tracing: ${process.env.AWS_FUNCTION_TRACING || 'Active'}\n` +
+      `    Timeout: ${envVars.AWS_FUNCTION_TIMEOUT || 3}\n` +
+      `    MemorySize: ${envVars.AWS_FUNCTION_MEMORY_SIZE || 512}\n` +
+      `    Tracing: ${envVars.AWS_FUNCTION_TRACING || 'Active'}\n` +
       '  Api:\n' +
       `    TracingEnabled: ${tracingEnabled}\n\n`
   );
@@ -162,7 +205,7 @@ const addMetadataToTemplate = async (entryPoints, functionName, realPath) => {
       newEntries.push(name + '.js');
       allEntryPoints.push({
         name: `${name}`,
-        value: `${realPath}/${entryPoint}.js`,
+        value: `${realPath}/${entryPoint}`,
       });
     }
     const sEntryPoints = newEntries
@@ -177,7 +220,7 @@ const addMetadataToTemplate = async (entryPoints, functionName, realPath) => {
       '    Metadata:\n' +
         '      BuildMethod: esbuild\n' +
         '      BuildProperties:\n' +
-        `        Minify: ${process.env.AWS_FUNCTION_MINIFY || 'true'}\n` +
+        `        Minify: ${envVars.AWS_FUNCTION_MINIFY || 'true'}\n` +
         `        Target: "${tsconfig.compilerOptions.target || 'es2020'}"\n` +
         `        Sourcemap: ${tsconfig.compilerOptions.sourceMap || 'true'}\n` +
         `        EntryPoints:\n` +
@@ -234,7 +277,7 @@ const addFunction = async (
   realPath
 ) => {
   const architectures = JSON.parse(
-    process.env.AWS_FUNCTION_ARCHITECTURES || '["x86_64"]'
+    envVars.AWS_FUNCTION_ARCHITECTURES || '["x86_64"]'
   )
     ?.map((architecture) => `        - ${architecture}\n`)
     ?.join('');
@@ -246,21 +289,23 @@ const addFunction = async (
         '    Type: AWS::Serverless::Function\n' +
         '    Properties:\n' +
         `      CodeUri: ./dist\n` +
-        `      Handler: index.default\n` +
-        JSON.parse(
-          process.env.AWS_FUNCTION_USE_COMMON_LAYER?.toLowerCase() || 'false'
-        )
-        ? `      Layers:\n` + `        - !Ref CommonLayer\n`
-        : '' +
-            `      Runtime: ${
-              process.env.AWS_FUNCTION_RUNTIME || 'nodejs16.x'
-            }\n` +
-            `      Environment:\n` +
-            `        Variables:\n` +
-            `          NODE_PATH: './:/opt/node_modules'\n` +
-            `      Architectures:\n` +
-            architectures +
-            `      Events:\n`
+        `      Handler: ${functionName}0.default\n` +
+        (JSON.parse(useCommonLayer)
+          ? `      Layers:\n` + `        - !Ref CommonLayer\n`
+          : '') +
+        `      Runtime: ${envVars.AWS_FUNCTION_RUNTIME || 'nodejs16.x'}\n` +
+        `      Environment:\n` +
+        `        Variables:\n` +
+        `          NODE_PATH: './:/opt/node_modules'\n` +
+        Object.getOwnPropertyNames(envVars)
+          .map(
+            (key) =>
+              `          ${key}: '${envVars[key].replaceAll('\n', '\\n')}'\n`
+          )
+          .join('') +
+        `      Architectures:\n` +
+        architectures +
+        `      Events:\n`
     );
     await addMethodsToTemplate(functionName, path);
   } else {
@@ -311,7 +356,7 @@ const addEntriesToWebpackConfig = async () => {
   await appendWebpackConfig(
     `  entry: {\n` +
       allEntryPoints
-        .map((entry) => `    ${entry.name}: ${entry.value}`)
+        .map((entry) => `    ${entry.name}: '${entry.value}'`)
         .join(',\n') +
       `  },\n`
   );
@@ -319,12 +364,12 @@ const addEntriesToWebpackConfig = async () => {
 
 const appendWebpackConfig = async (text) => {
   await appendfil('./webpack.config.js', text);
-  await addEntriesToWebpackConfig();
-  await closeWebpackConfig();
 };
 
 const generateWebpackConfig = async () => {
   await initWebpackConfig();
+  await addEntriesToWebpackConfig();
+  await closeWebpackConfig();
 };
 
 const execute = async () => {
@@ -339,11 +384,7 @@ const execute = async () => {
     './source/pages',
   ]);
   await generateWebpackConfig();
-  if (
-    JSON.parse(
-      process.env.AWS_FUNCTION_USE_COMMON_LAYER?.toLowerCase() || 'false'
-    )
-  )
+  if (JSON.parse(useCommonLayer))
     await appendTemplate(
       '\n' +
         `  CommonLayer:\n` +

@@ -27,7 +27,7 @@ case $exec in
     ;;
 
   "build")
-    (cd $pwd ;  backBuild; npm run --prefix $pwd webpack ;)
+    (cd $pwd; backBuild; webpack;)
     ;;
 
   "")
