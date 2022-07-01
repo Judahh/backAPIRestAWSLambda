@@ -120,7 +120,6 @@ const addMethodToTemplate = async (functionName, type, path) => {
       method = type;
       break;
   }
-  console.log('new:', functionName, type, path);
   await appendTemplate(
     `        ${functionName + type}:\n` +
       `          Type: Api\n` +
@@ -143,7 +142,6 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
           try {
             const files = await readdir(path);
             for (const file of files) {
-              // console.log('check:', file, functionName);
               if (
                 file
                   .toLowerCase()
@@ -151,13 +149,10 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
                 !file.toLowerCase().includes('.js') &&
                 !file.toLowerCase().includes('.map')
               ) {
-                console.log('found:', file, functionName);
                 let content = await readfil(path + '/' + file, {
                   encoding: 'utf8',
                 });
-                // console.log('found:', content);
                 content = content.split('extends')[1].split('exports')[0];
-                // console.log('content:', content);
                 content = content
                   .replaceAll(
                     /(\(0)|(\))|(\()|(_\d)|(BaseController)|(backapirest\/)|(class)|(default)|(from)|(")|(')|(@)|(-)|(lambda)|(functions)|(function)|(azure)|(digital-ocean)|(oci)|(gcp)|(aws)|(aws)|(next)|(any)|(import)|(export)|(Mixin)|(\,)|(\.)|(\n)|(\{)|(\})|(\ )/gm,
@@ -165,8 +160,6 @@ const addMethodsToTemplate = async (functionName, functionPath) => {
                   )
                   .split(',')
                   .filter((n) => n);
-
-                console.log('content: ', content);
 
                 for (const type of content) {
                   await addMethodToTemplate(functionName, type, functionPath);
