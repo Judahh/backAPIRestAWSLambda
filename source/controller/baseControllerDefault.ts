@@ -25,11 +25,8 @@ export default class BaseControllerDefault extends AbstractControllerDefault {
       })
     );
 
-    responseOrSocket = {
-      statusCode: status,
-      body: cleanObject,
-    };
-
+    responseOrSocket.statusCode = status;
+    responseOrSocket.body = cleanObject;
     return responseOrSocket;
   }
 }
