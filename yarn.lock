@@ -1195,9 +1195,9 @@ babel-preset-jest@^28.1.1:
     babel-preset-current-node-syntax "^1.0.0"
 
 backapi@latest:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/backapi/-/backapi-3.1.0.tgz#63aa485bbcee06a6123e66e0ef6eb2c06615f99b"
-  integrity sha512-/OKh1PT5lOezPcc4zY+CtbJk0gLTJGqSrFRPHBG5W7BDqs48+kOBoWqzHTmkcFtYy9Pdf7kl35e31x+ShkpqLQ==
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/backapi/-/backapi-3.1.1.tgz#809fae0d3191006a3f602dab82291ff0f3035574"
+  integrity sha512-67le11xL8Q9kCOsPD3wcPX5zyev9M6im3ZhcdPNvJp6pLcIO0yf2qn2hjzxAeSaxr2s9gaWAqXZMO/vgjHzU5A==
   dependencies:
     "@flexiblepersistence/default-initializer" latest
     "@flexiblepersistence/service" latest
@@ -1206,9 +1206,9 @@ backapi@latest:
     ts-mixer latest
 
 backapirest@latest:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/backapirest/-/backapirest-3.1.0.tgz#82bcc171c4cd92ab61276a4a7636fb48cca5f2a3"
-  integrity sha512-3/VRSg3zcLFw7/CwdHOzzPz7m2rRbUI6gJV+365tNyT25wpkGbmocOl0ZQhmEiSofCPhFupTTmbUWpuUspGzsg==
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/backapirest/-/backapirest-3.1.1.tgz#c84f6844d6f2ad9ea4dae7b89e6c0b3f0c776f4b"
+  integrity sha512-mU5cBfSDtX+ZHzJsuUCftumaC/+sg1DGaWXxkbPO7eXlaZjaDVFUPEcd71lERqB1EuOG/McRUsuvFwApDnoLCQ==
   dependencies:
     "@flexiblepersistence/default-initializer" latest
     "@flexiblepersistence/service" latest
@@ -2054,9 +2054,9 @@ globals@^11.1.0:
   integrity sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==
 
 globals@^13.15.0:
-  version "13.15.0"
-  resolved "https://registry.yarnpkg.com/globals/-/globals-13.15.0.tgz#38113218c907d2f7e98658af246cef8b77e90bac"
-  integrity sha512-bpzcOlgDhMG070Av0Vy5Owklpv1I6+j96GhUI7Rh7IzDCKLzboflLrrfqMu8NquDbiR4EOQk7XzJwqVJxicxog==
+  version "13.16.0"
+  resolved "https://registry.yarnpkg.com/globals/-/globals-13.16.0.tgz#9be4aca28f311aaeb974ea54978ebbb5e35ce46a"
+  integrity sha512-A1lrQfpNF+McdPOnnFqY3kSN0AFTy485bTi1bkLk4mVPODIUEcSfhHgRqA+QdXPksrSTTztYXx37NFV+GpGk3Q==
   dependencies:
     type-fest "^0.20.2"
 
