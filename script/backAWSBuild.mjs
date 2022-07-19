@@ -309,7 +309,8 @@ const addFunction = async (
 const initWebpackConfig = async () => {
   await writefil(
     './webpack.config.js',
-    `const path = require('path');\n` +
+    `const TerserPlugin = require('terser-webpack-plugin');\n` +
+      `const path = require('path');\n` +
       `const nodeExternals = require('webpack-node-externals');\n` +
       `module.exports = {\n` +
       `  mode: 'production',\n` +
@@ -337,6 +338,17 @@ const initWebpackConfig = async () => {
       `    library: {\n` +
       `      type: 'commonjs',\n` +
       `    },\n` +
+      `  },\n` +
+      `  optimization: {\n` +
+      `    minimizer: [\n` +
+      `      new TerserPlugin({\n` +
+      `        sourceMap: false,\n` +
+      `        terserOptions: {\n` +
+      `          keep_classnames: true,\n` +
+      `          keep_fnames: true,\n` +
+      `        },\n` +
+      `      }),\n` +
+      `    ],\n` +
       `  },\n`
   );
 };
