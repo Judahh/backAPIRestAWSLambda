@@ -37,7 +37,7 @@ describe('1', () => {
       callback
     );
     console.log('store:', store);
-    const storedTest = store['received'];
+    const storedTest = store['body'];
     console.log('storedTest:', storedTest);
 
     sentTest.id = storedTest.id;
@@ -55,7 +55,7 @@ describe('1', () => {
       callback
     );
     // console.log('show:', show);
-    const indexTest = index['received'];
+    const indexTest = index['body'];
     expect(indexTest).toMatchObject(expectedTest);
 
     const store2 = await controller.create(
@@ -66,7 +66,7 @@ describe('1', () => {
       callback
     );
     // console.log('store:', store);
-    const storedTest2 = store2['received'];
+    const storedTest2 = store2['body'];
     // console.log('storedTest2:', storedTest);
 
     sentTest2.id = storedTest2.id;
@@ -83,7 +83,7 @@ describe('1', () => {
       callback
     );
 
-    const showTest = show['received'];
+    const showTest = show['body'];
 
     const expectedTests = [storedTest, storedTest2];
 
@@ -110,7 +110,7 @@ describe('1', () => {
     );
     // console.log('update:', update);
 
-    const updatedTest = update['received'];
+    const updatedTest = update['body'];
     // console.log('updatedTest:', updatedTest);
     const expectedUpdatedTest = { id: storedTest2.id, name: sentTest3.name };
     // console.log('expectedUpdatedTest:', expectedUpdatedTest);
@@ -131,7 +131,7 @@ describe('1', () => {
       callback
     );
 
-    const showTest2 = show2['received'];
+    const showTest2 = show2['body'];
 
     const expectedTests2 = [storedTest, expectedUpdatedTest];
     // console.log('showTest2:', showTest2);
@@ -153,7 +153,7 @@ describe('1', () => {
       callback
     );
 
-    const deletedTest = deleted['received'];
+    const deletedTest = deleted['body'];
     // console.log('deletedTest:', deletedTest);
     const expectedDeletedTest = expectedUpdatedTest;
     // console.log('expectedDeletedTest:', expectedDeletedTest);
@@ -173,7 +173,7 @@ describe('1', () => {
       callback
     );
 
-    const showTest3 = show3['received'];
+    const showTest3 = show3['body'];
     // console.log('showTest3:', showTest3);
     const expectedTests3 = [storedTest];
     const cleanShowTest3 = JSON.parse(JSON.stringify(showTest3));
