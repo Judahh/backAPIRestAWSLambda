@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-while getopts p:db flag
+while getopts p:dmb flag
 do
     case "${flag}" in
         p) port=${OPTARG};;
@@ -43,7 +43,7 @@ case $exec in
     if test -f "$file"; then
       (node $file -m)
     else
-      (node ./node_modules/@backapirest/express/script/migrate.mjs -f $pwd)
+      (npm tsc & node ./node_modules/@backapirest/aws-lambda/script/migrate.mjs -f $pwd)
     fi;;
 
   "")
