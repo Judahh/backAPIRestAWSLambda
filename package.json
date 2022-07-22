@@ -2,7 +2,7 @@
   "name": "@backapirest/aws-lambda",
   "productName": "backAPIRestAWSLambda",
   "author": "Judah Holanda Correia Lima <judahholanda7@gmail.com> (https://judahh.com)",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "description": "A simple API framework using Flexible Persistence",
   "main": "dist/source/index.js",
@@ -10,7 +10,8 @@
   "types": "dist/source/index.d.ts",
   "bin": {
     "backAWSLambda": "script/backAWS.sh",
-    "backAWSBuild": "script/backAWSBuild.mjs"
+    "backAWSBuild": "script/backAWSBuild.mjs",
+    "migrate": "script/migrate.mjs"
   },
   "files": [
     "dist"
