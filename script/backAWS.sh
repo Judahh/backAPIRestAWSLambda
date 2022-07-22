@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 while getopts p:db flag
 do
-    case "${flag}" in
-        p) port=${OPTARG};;
+    case "$flag" in
+        p) port=$OPTARG;;
         d) exec="dev";;
         m) exec="migrate";;
         b) exec="build";;
@@ -13,40 +13,40 @@ dist="${npm_package_config_path_dist:-.}"
 server="${npm_package_config_path_server:-source/server.js}"
 file=$dist/$server
 
-pwd=$(pwd)
-cd $pwd;
+pwd=$PWD
+cd "$pwd";
 
 if [ -f ".env" ]; then
     echo ".env exists."
     cat .env | grep -v '#' | grep PORT
-    export $(cat .env | grep -v '#' | grep PORT)
+    export "$(cat .env | grep -v '#' | grep PORT)"
 fi
 
 port="${PORT:=3000}"
 
-echo "setted Port: ${port}"
+echo "setted Port: $port"
 
 case $exec in
   "dev")
-    (cd $pwd ; ./node_modules/nodemon/bin/nodemon.js -e ts --exec "npm run build && npm run start")
+    (cd "$pwd" ; ./node_modules/nodemon/bin/nodemon.js -e ts --exec "npm run build && npm run start")
     ;;
 
   "build")
-    (cd $pwd; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json)
+    (cd "$pwd"; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json)
     ;;
 
   "full-build")
-    (cd $pwd; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json; sam-build)
+    (cd "$pwd"; rm -rf dist/; backAWSBuild; webpack; cp ./package.json ./dist/package.json; sam-build)
     ;;
 
   "migrate")
     if test -f "$file"; then
-      (node $file -m)
+      (node "$file" -m)
     else
-      (node ./node_modules/@backapirest/express/script/migrate.mjs -f $pwd)
+      (node ./node_modules/@backapirest/express/script/migrate.mjs -f "$pwd")
     fi;;
 
   "")
-    sam local start-api -p $port
+    sam local start-api -p "$port"
     ;;
 esac
