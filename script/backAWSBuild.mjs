@@ -340,9 +340,9 @@ const initWebpackConfig = async () => {
       `    },\n` +
       `  },\n` +
       `  optimization: {\n` +
+      `    minimize: true,\n` +
       `    minimizer: [\n` +
       `      new TerserPlugin({\n` +
-      `        sourceMap: false,\n` +
       `        terserOptions: {\n` +
       `          keep_classnames: true,\n` +
       `          keep_fnames: true,\n` +
