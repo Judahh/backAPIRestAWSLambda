@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+
+import { SimpleApp } from 'backapirest';
 import { chdir, cwd } from 'node:process';
 
 const sImport = async (root, paths) => {
@@ -48,7 +50,8 @@ try {
       console.log('index', rIndex);
       console.log('instance', instance);
       console.log('handler', handler);
-      handler.migrate();
+      const app = new SimpleApp(instance, handler, undefined, undefined, false);
+      app.migrate();
     });
   });
 } catch (error) {
