@@ -4,7 +4,7 @@ import { RouterSingleton } from 'backapirest';
 const createRoutes = (
   router: RouterSingleton,
   ...args: unknown[]
-): TPromise<boolean> => {
+): TPromise<unknown[], boolean, boolean> => {
   return new TPromise((resolve) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
