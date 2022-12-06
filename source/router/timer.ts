@@ -1,6 +1,6 @@
 import TPromise from 'thread-promises';
 
-const timer = (ms): TPromise<boolean> => {
+const timer = (ms): TPromise<unknown[], boolean, boolean> => {
   return new TPromise((resolve) =>
     setTimeout(() => {
       resolve(false);
